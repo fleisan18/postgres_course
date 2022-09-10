@@ -1,0 +1,91 @@
+--*How to return a set of primitive type values*--
+DROP FUNCTION IF EXISTS get_average_prices_by_product_categories;
+CREATE OR REPLACE FUNCTION get_average_prices_by_product_categories() 
+	RETURNS SET OF double precision AS $$
+	
+	SELECT AVG(unit_price)
+	FROM products
+	GROUP BY category_id	
+	
+$$ LANGUAGE SQL;
+
+SELECT * FROM get_average_prices_by_product_categories() as average_prices;
+
+--*How to return a set of columns*--
+--*With OUT parameters*--
+DROP FUNCTION IF EXISTS get_average_prices_by_product_categories;
+CREATE OR REPLACE FUNCTION get_average_prices_by_product_categories(OUT sum_price real, OUT avg_price float8) 
+		RETURNS SETOF RECORD AS $$
+	
+	SELECT SUM(unit_price), AVG(unit_price)
+	FROM products
+	GROUP BY category_id;
+				
+$$ LANGUAGE SQL;
+
+SELECT sum_price FROM get_average_prices_by_product_categories();
+SELECT sum_price, avg_price FROM get_average_prices_by_product_categories();
+
+--won't work
+SELECT sum_of, in_avg FROM get_average_prices_by_product_categories();
+
+--will work
+SELECT sum_price AS sum_of, avg_price AS in_avg 
+FROM get_average_prices_by_product_categories();
+
+--*How to return a set of columns*--
+--*WithOUT OUT parameters*--
+DROP FUNCTION IF EXISTS get_average_prices_by_product_categories;
+
+CREATE OR REPLACE FUNCTION get_average_prices_by_product_categories() 
+		RETURNS SETOF record AS $$
+	
+	SELECT SUM(unit_price), AVG(unit_price)
+	FROM products
+	GROUP BY category_id;
+				
+$$ LANGUAGE SQL;
+
+--won't work in all 4 syntax options
+SELECT sum_price FROM get_average_prices_by_product_categories();
+SELECT sum_price, avg_price FROM get_average_prices_by_product_categories();
+SELECT sum_of, in_avg FROM get_average_prices_by_product_categories();
+SELECT * FROM get_average_prices_by_product_categories();
+
+--works only this
+SELECT * FROM get_average_prices_by_product_categories() AS (sum_price real, avg_price float8);
+
+--returns table
+DROP FUNCTION IF EXISTS get_customers_by_country;
+
+CREATE OR REPLACE FUNCTION get_customers_by_country(customer_country varchar) 
+		RETURNS TABLE(char_code char, company_name varchar) AS $$
+	
+	SELECT customer_id, company_name
+	FROM customers	
+	WHERE country = customer_country
+	
+$$ LANGUAGE SQL;
+
+--правила селекта все те же что и при returns setof
+SELECT * FROM get_customers_by_country('USA');
+SELECT company_name FROM get_customers_by_country('USA');
+SELECT char_code, company_name FROM get_customers_by_country('USA');
+
+--setof table
+DROP FUNCTION IF EXISTS get_customers_by_country;
+CREATE OR REPLACE FUNCTION get_customers_by_country(customer_country varchar) 
+		RETURNS SETOF customers AS $$
+	
+	-- won't work: select company_name, contact_name
+	SELECT *
+	FROM customers	
+	WHERE country = customer_country
+	
+$$ LANGUAGE SQL;
+
+SELECT * FROM get_customers_by_country('USA');
+-- получим просто простыню текста: select get_customers_by_country('USA');
+
+SELECT contact_name, city
+FROM get_customers_by_country('USA');
